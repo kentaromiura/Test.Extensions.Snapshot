@@ -2,7 +2,7 @@
 C# Snapshots utilities
 
 
-This package provides a ToMatchSnapshot extension method that will available for testing:
+This package provides a ToMatchSnapshot extension method that will be available for testing:
 
 ```c#
 using Snapshot.Extensions;
