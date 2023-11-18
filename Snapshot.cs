@@ -1,7 +1,8 @@
 ﻿using System;
 using System.IO;
-using Newtonsoft.Json;
-using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
     
@@ -24,8 +25,7 @@ namespace Snapshot
             var current = Directory.GetCurrentDirectory();
             var snapshotFolder = Path.Combine(current, "__snaphots__");
             var filename =  Path.Combine(snapshotFolder, string.Format("{0}.snap", Path.GetFileName(file)));
-            var dictionary = new Dictionary<string, string>();
-            var serializer = new JsonSerializer();
+            JsonObject json = new JsonObject();
             var directoryExists = Directory.Exists(snapshotFolder);
             var fileExists = File.Exists(filename);
             
@@ -33,11 +33,11 @@ namespace Snapshot
             if (directoryExists && fileExists)
             {
                 var text = File.ReadAllText(filename);
-                dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(text);
+                json = JsonNode.Parse(text).AsObject();
                 
-                if (dictionary.ContainsKey(key))
+                if (json![key] != null)
                 {
-                    var value = dictionary[key];
+                    var value = json![key].ToString();
                     if (!update && value != result.ToString())
                     {
                         Console.Write("{0}Snapshot failed:{0}Diff:{0}", newLine);
@@ -69,13 +69,14 @@ namespace Snapshot
                 Directory.CreateDirectory(snapshotFolder);
             }
             
-            if (dictionary.ContainsKey(key))
+            if (json![key] != null)
             {
-                dictionary.Remove(key);            
+                json.Remove(key);   
             }
-            dictionary.Add(key, result.ToString());
             
-            File.WriteAllText(filename, JsonConvert.SerializeObject(dictionary));        
+            json.Add(key, JsonValue.Create(result.ToString()));
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            File.WriteAllText(filename, json.ToJsonString(options));        
             return true;
         }
     }
